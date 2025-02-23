@@ -139,6 +139,8 @@ struct FiltersView: View {
     @State var userFilters: [UserFilter] = [.mock]
     @State var filteredImage: UIImage? = nil
     @State var isEditing: Bool = false
+    @State var isTouchingImage: Bool = false
+    @State var aspectRatio: CGFloat? = nil
     let imageProcessor = ImageProcessor()
 
     let ciContext = CIContext(options: [.useSoftwareRenderer: false])
@@ -146,12 +148,34 @@ struct FiltersView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                Image(uiImage: filteredImage ?? initialImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .aspectRatio(1.0, contentMode: .fill)
-                    .padding(.bottom)
+                ZStack {
+                    Image(uiImage: initialImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                    Image(uiImage: filteredImage ?? initialImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .opacity(isTouchingImage ? 0.0 : 1.0)
+                }
+                .aspectRatio(aspectRatio, contentMode: .fill)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            isTouchingImage = true
+                        }
+                        .onEnded { value in
+                            if abs(value.velocity.height) > 300 {
+                                if aspectRatio == nil {
+                                    aspectRatio = 1.0
+                                } else {
+                                    aspectRatio = nil
+                                }
+                            }
+                            isTouchingImage = false
+                        }
+                )
+
                 HStack {
                     Text("Active Filters")
                     Spacer()
@@ -203,6 +227,7 @@ struct FiltersView: View {
                                 }
                             }
                         }
+                        .moveDisabled(!isEditing)
                     }
                     .onMove { from, to in userFilters.move(fromOffsets: from, toOffset: to) }
                     .onDelete { indexSet in userFilters.remove(atOffsets: indexSet) }
