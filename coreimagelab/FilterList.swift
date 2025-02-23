@@ -71,6 +71,18 @@ struct FilterInputScalar {
         result = result ?? sliderMaxValue
         return result ?? 0
     }
+
+    var preferredSliderMinValue: Double {
+        var result = minValue
+        result = result ?? sliderMinValue
+        return result ?? 0
+    }
+
+    var preferredSliderMaxValue: Double {
+        var result = maxValue
+        result = result ?? sliderMaxValue
+        return result ?? 0
+    }
 }
 
 enum FilterInputType {
@@ -192,7 +204,7 @@ struct FiltersView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 6)
                 .background(Material.bar)
-                
+
                 List {
                     ForEach($userFilters) { $userFilter in
                         VStack(spacing: 10) {
@@ -212,17 +224,28 @@ struct FiltersView: View {
                             }
                             if userFilter.isExpanded, !isEditing {
                                 ForEach($userFilter.inputs) { $input in
-                                    GroupBox(input.name) {
+                                    GroupBox {
                                         let filter = filters[userFilter.name]!
                                         if let matchingScalarInput = filter.scalarInputs.first(where: { $0.name == input.name }),
-                                           case let .scalar(scalarInput) = matchingScalarInput.inputType,
-                                           let sliderMin = scalarInput.sliderMinValue,
-                                           let sliderMax = scalarInput.sliderMaxValue
+                                           case let .scalar(scalarInput) = matchingScalarInput.inputType
                                         {
+                                            let sliderMin = scalarInput.preferredSliderMinValue
+                                            let sliderMax = scalarInput.preferredSliderMaxValue
                                             HStack {
-                                                Slider(value: $input.value, in: sliderMin ... sliderMax)
-                                                Text(input.value, format: .number.precision(.significantDigits(2)))
+                                                Slider(value: $input.value, in: sliderMin ... sliderMax) {
+                                                    Text(input.name)
+                                                } minimumValueLabel: {
+                                                    Text(sliderMin, format: .number.precision(.significantDigits(2)))
+                                                } maximumValueLabel: {
+                                                    Text(sliderMax, format: .number.precision(.significantDigits(2)))
+                                                }
                                             }
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Text(input.name)
+                                            Spacer()
+                                            Text(input.value, format: .number.precision(.significantDigits(4)))
                                         }
                                     }
                                 }
