@@ -147,7 +147,7 @@ struct FiltersView: View {
 
     var body: some View {
         NavigationStack {
-            VStack {
+            VStack(spacing: 0) {
                 ZStack {
                     Image(uiImage: initialImage)
                         .resizable()
@@ -190,8 +190,9 @@ struct FiltersView: View {
                 .font(.headline)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
-                .onChange(of: isEditing) { oldValue, newValue in
-                }
+                .padding(.vertical, 6)
+                .background(Material.bar)
+                
                 List {
                     ForEach($userFilters) { $userFilter in
                         VStack(spacing: 10) {
