@@ -167,9 +167,12 @@ struct FiltersView: View {
     var unfilteredImage: UIImage { inputImage ?? testImage }
     @State var inputLibraryItem: PhotosPickerItem? = nil
 
+    @State var inputBackgroundImage: UIImage? = nil
+    @State var inputBackgroundLibraryItem: PhotosPickerItem? = nil
+
     let filters: [Filter.ID: Filter] = .init(uniqueKeysWithValues: allFilters().map { ($0.id, $0) })
     @State var isShowingAdd: Bool = false
-    @State var userFilters: [UserFilter] = [.mock]
+    @State var userFilters: [UserFilter] = []
     @State var filteredImage: UIImage? = nil
     @State var isEditing: Bool = false
     @State var isTouchingImage: Bool = false
@@ -185,6 +188,7 @@ struct FiltersView: View {
                     Image(uiImage: unfilteredImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
+                        .opacity((isTouchingImage || filteredImage == nil) ? 1.0 : 0.0)
                     if let filteredImage {
                         Image(uiImage: filteredImage)
                             .resizable()
@@ -246,6 +250,34 @@ struct FiltersView: View {
                                 }
                             }
                         }
+
+                        GroupBox("Background Image") {
+                            VStack(spacing: 16) {
+                                HStack {
+                                    Group {
+                                        if inputBackgroundLibraryItem == nil || (inputBackgroundLibraryItem != nil && inputBackgroundImage == nil) {
+                                            PhotosPicker(selection: $inputBackgroundLibraryItem, matching: .images, preferredItemEncoding: .current) {
+                                                Text(inputBackgroundLibraryItem == nil ? "Select Image From Library" : "Loading Image...")
+                                            }
+                                        } else {
+                                            Button("Remove Image") { inputBackgroundLibraryItem = nil }
+                                        }
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                }
+                                .task(id: inputBackgroundLibraryItem) {
+                                    if let item = inputBackgroundLibraryItem,
+                                       let data = try? await item.loadTransferable(type: Data.self)
+                                    {
+                                        inputBackgroundImage = UIImage(data: data)
+                                    } else {
+                                        filteredImage = nil
+                                        inputBackgroundImage = nil
+                                    }
+                                }
+                            }
+                        }
                     } header: {
                         Text("Inputs")
                             .font(.headline)
@@ -257,6 +289,7 @@ struct FiltersView: View {
             .environment(\.editMode, isEditing ? .constant(.active) : .constant(.inactive))
             .task(id: userFilters) { await processImage() }
             .task(id: unfilteredImage) { await processImage() }
+            .task(id: inputBackgroundImage) { await processImage() }
             .sheet(isPresented: $isShowingAdd) {
                 AddFilterView { filter in
                     userFilters.append(filter)
@@ -269,7 +302,7 @@ struct FiltersView: View {
         guard !userFilters.isEmpty else { return }
         do {
             try await Task.sleep(for: .milliseconds(100))
-            filteredImage = await imageProcessor.processImage(inputImage: unfilteredImage, filters: userFilters, ciContext: ciContext)
+            filteredImage = await imageProcessor.processImage(inputImage: unfilteredImage, inputBackgroundImage: inputBackgroundImage, filters: userFilters, ciContext: ciContext)
         } catch {}
     }
 
@@ -371,7 +404,7 @@ struct AddFilterView: View {
                 }
             }
             .listStyle(.plain)
-            .navigationTitle("All Scalar Filters")
+            .navigationTitle("All Filters")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done", systemImage: "xmark") {
@@ -386,20 +419,28 @@ struct AddFilterView: View {
 actor ImageProcessor {
     private var filterCache: [UserFilter.ID: CIFilter] = [:]
 
-    func processImage(inputImage: UIImage, filters: [UserFilter], ciContext: CIContext) async -> UIImage {
-        let ciImage = CIImage(cgImage: inputImage.cgImage!)
+    func processImage(inputImage: UIImage, inputBackgroundImage: UIImage?, filters: [UserFilter], ciContext: CIContext) async -> UIImage {
+        let ciImage = CIImage(image: inputImage)!
+        let ciBackgroundImage = inputBackgroundImage.flatMap { CIImage(image: $0) }
         var resultImage: CIImage = ciImage
         for userFilter in filters {
             guard userFilter.isEnabled else { continue }
             let filter = filterCache[userFilter.id] ?? CIFilter(name: userFilter.name)!
             filterCache[userFilter.id] = filter
             filter.setValue(resultImage, forKey: kCIInputImageKey)
+            if filter.inputKeys.contains(kCIInputBackgroundImageKey) {
+                if let ciBackgroundImage {
+                    filter.setValue(ciBackgroundImage, forKey: kCIInputBackgroundImageKey)
+                } else {
+                    filter.setValue(nil, forKey: kCIInputBackgroundImageKey)
+                }
+            }
             for userFilterInput in userFilter.inputs {
                 filter.setValue(userFilterInput.value, forKey: userFilterInput.name)
             }
             resultImage = filter.outputImage!
         }
-        let filteredImage = UIImage(cgImage: ciContext.createCGImage(resultImage, from: ciImage.extent)!, scale: inputImage.scale, orientation: inputImage.imageOrientation)
+        let filteredImage = UIImage(cgImage: ciContext.createCGImage(resultImage, from: ciImage.extent, format: ciContext.workingFormat, colorSpace: inputImage.cgImage?.colorSpace)!, scale: inputImage.scale, orientation: inputImage.imageOrientation)
         return filteredImage
     }
 }
