@@ -229,6 +229,7 @@ struct FiltersView: View {
                             }
                         }
                         .moveDisabled(!isEditing)
+                        .deleteDisabled(!isEditing)
                     }
                     .onMove { from, to in userFilters.move(fromOffsets: from, toOffset: to) }
                     .onDelete { indexSet in userFilters.remove(atOffsets: indexSet) }
