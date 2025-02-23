@@ -308,7 +308,7 @@ struct AddFilterView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     Button("Add", systemImage: "plus") {
                         let inputs: [UserFilterInput] = filter.inputs.map { (input: FilterInput) in
-                            return UserFilterInput(name: input.name, displayName: input.displayName, value: input.values.preferredDefaultValue)
+                            UserFilterInput(name: input.name, displayName: input.displayName, value: input.values.preferredDefaultValue)
                         }
                         let userFilter = UserFilter(
                             name: filter.name,
