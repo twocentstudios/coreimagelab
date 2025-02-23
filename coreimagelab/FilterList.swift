@@ -177,6 +177,7 @@ struct FiltersView: View {
     @State var isEditing: Bool = false
     @State var isTouchingImage: Bool = false
     @State var useOriginalAspectRatio: Bool = false
+    @State var isScalingBackgroundImage: Bool = false
     let imageProcessor = ImageProcessor()
 
     let ciContext = CIContext(options: [.useSoftwareRenderer: false])
@@ -276,6 +277,8 @@ struct FiltersView: View {
                                         inputBackgroundImage = nil
                                     }
                                 }
+                                Toggle("Scale to Fill Input Image", isOn: $isScalingBackgroundImage)
+                                    .font(.subheadline)
                             }
                         }
                     } header: {
@@ -290,6 +293,7 @@ struct FiltersView: View {
             .task(id: userFilters) { await processImage() }
             .task(id: unfilteredImage) { await processImage() }
             .task(id: inputBackgroundImage) { await processImage() }
+            .task(id: isScalingBackgroundImage) { await processImage() }
             .sheet(isPresented: $isShowingAdd) {
                 AddFilterView { filter in
                     userFilters.append(filter)
@@ -302,7 +306,13 @@ struct FiltersView: View {
         guard !userFilters.isEmpty else { return }
         do {
             try await Task.sleep(for: .milliseconds(100))
-            filteredImage = await imageProcessor.processImage(inputImage: unfilteredImage, inputBackgroundImage: inputBackgroundImage, filters: userFilters, ciContext: ciContext)
+            filteredImage = await imageProcessor.processImage(
+                inputImage: unfilteredImage,
+                inputBackgroundImage: inputBackgroundImage,
+                filters: userFilters,
+                isScalingBackgroundImage: isScalingBackgroundImage,
+                ciContext: ciContext
+            )
         } catch {}
     }
 
@@ -419,9 +429,23 @@ struct AddFilterView: View {
 actor ImageProcessor {
     private var filterCache: [UserFilter.ID: CIFilter] = [:]
 
-    func processImage(inputImage: UIImage, inputBackgroundImage: UIImage?, filters: [UserFilter], ciContext: CIContext) async -> UIImage {
-        let ciImage = CIImage(image: inputImage)!
-        let ciBackgroundImage = inputBackgroundImage.flatMap { CIImage(image: $0) }
+    func processImage(
+        inputImage: UIImage,
+        inputBackgroundImage: UIImage?,
+        filters: [UserFilter],
+        isScalingBackgroundImage: Bool,
+        ciContext: CIContext
+    ) async -> UIImage {
+        let ciImage = CIImage(image: inputImage, options: [.applyOrientationProperty: true])!
+            .oriented(forExifOrientation: inputImage.imageOrientation.exifOrientation)
+        let ciBackgroundImage = inputBackgroundImage.flatMap {
+            CIImage(image: $0, options: [.applyOrientationProperty: true])?
+                .oriented(forExifOrientation: $0.imageOrientation.exifOrientation)
+                .transformed(by: isScalingBackgroundImage
+                    ? CGAffineTransform(scaleX: inputImage.size.width / $0.size.width, y: inputImage.size.height / $0.size.height)
+                    : .identity
+                )
+        }
         var resultImage: CIImage = ciImage
         for userFilter in filters {
             guard userFilter.isEnabled else { continue }
@@ -447,4 +471,20 @@ actor ImageProcessor {
 
 #Preview {
     FiltersView()
+}
+
+extension UIImage.Orientation {
+    var exifOrientation: Int32 {
+        switch self {
+        case .up: return 1
+        case .down: return 3
+        case .left: return 8
+        case .right: return 6
+        case .upMirrored: return 2
+        case .downMirrored: return 4
+        case .leftMirrored: return 5
+        case .rightMirrored: return 7
+        @unknown default: return 0
+        }
+    }
 }
