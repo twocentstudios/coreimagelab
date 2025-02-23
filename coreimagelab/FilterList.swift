@@ -185,12 +185,16 @@ struct FiltersView: View {
                     Image(uiImage: unfilteredImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                    Image(uiImage: filteredImage ?? unfilteredImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .opacity(isTouchingImage ? 0.0 : 1.0)
+                    if let filteredImage {
+                        Image(uiImage: filteredImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .opacity(isTouchingImage ? 0.0 : 1.0)
+                    }
                 }
                 .aspectRatio(useOriginalAspectRatio ? nil : 1.0, contentMode: .fit)
+                .containerRelativeFrame(.vertical) { size, axis in size * 0.4 }
+                .clipped()
                 .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 0)
@@ -260,7 +264,7 @@ struct FiltersView: View {
             }
         }
     }
-    
+
     private func processImage() async {
         guard !userFilters.isEmpty else { return }
         do {
