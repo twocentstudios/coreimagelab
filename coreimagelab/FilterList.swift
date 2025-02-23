@@ -14,16 +14,19 @@ struct Filter: Identifiable {
     var availableMacOS: Int? { attributes[kCIAttributeFilterAvailable_Mac] as? Int }
     var categories: [String]? { attributes[kCIAttributeFilterCategories] as? [String] } // https://developer.apple.com/documentation/coreimage/cifilter/filter_category_keys
 
-    var scalarInputs: [FilterInput] {
+    var inputs: [FilterInput] {
         var results: [FilterInput] = []
         for inputKey in inputKeys {
             let inputAttributes = attributes[inputKey] as! [String: Any]
             let displayName = inputAttributes[kCIAttributeDisplayName] as! String
             let classType = inputAttributes[kCIAttributeClass] as! String
             let description = inputAttributes[kCIAttributeDescription] as? String
+            guard let attributeType = FilterInputType(inputAttributes[kCIAttributeType] as? String) else { continue }
 
-            guard inputAttributes[kCIAttributeType] as? String == kCIAttributeTypeScalar else { continue }
-            let inputScalar = FilterInputScalar(
+            // temporarily limit types
+            guard attributeType == .scalar || attributeType == .distance else { continue }
+
+            let values = FilterValues(
                 defaultValue: inputAttributes[kCIAttributeDefault] as? Double,
                 identityValue: inputAttributes[kCIAttributeIdentity] as? Double,
                 minValue: inputAttributes[kCIAttributeMin] as? Double,
@@ -31,7 +34,7 @@ struct Filter: Identifiable {
                 sliderMinValue: inputAttributes[kCIAttributeSliderMin] as? Double,
                 sliderMaxValue: inputAttributes[kCIAttributeSliderMax] as? Double
             )
-            let result = FilterInput(name: inputKey, displayName: displayName, classType: classType, description: description, inputType: .scalar(inputScalar))
+            let result = FilterInput(name: inputKey, displayName: displayName, classType: classType, description: description, inputType: attributeType, values: values)
             results.append(result)
         }
         return results
@@ -40,7 +43,6 @@ struct Filter: Identifiable {
     var isValid: Bool {
         guard inputKeys.contains(kCIInputImageKey) else { return false }
         guard outputKeys.contains(kCIOutputImageKey) else { return false }
-        guard !scalarInputs.isEmpty else { return false }
         return true
     }
 }
@@ -52,9 +54,10 @@ struct FilterInput: Identifiable {
     let classType: String
     let description: String?
     let inputType: FilterInputType
+    let values: FilterValues
 }
 
-struct FilterInputScalar {
+struct FilterValues {
     let defaultValue: Double?
     let identityValue: Double?
     let minValue: Double?
@@ -87,12 +90,25 @@ struct FilterInputScalar {
 
 enum FilterInputType {
     case time
-    case scalar(FilterInputScalar)
+    case scalar
     case distance
     case angle
     case boolean
     case integer
     case count
+
+    init?(_ attributeType: String?) {
+        switch attributeType {
+        case kCIAttributeTypeTime: self = .time
+        case kCIAttributeTypeScalar: self = .scalar
+        case kCIAttributeTypeDistance: self = .distance
+        case kCIAttributeTypeAngle: self = .angle
+        case kCIAttributeTypeBoolean: self = .boolean
+        case kCIAttributeTypeInteger: self = .integer
+        case kCIAttributeTypeCount: self = .count
+        default: return nil
+        }
+    }
 
     var cIAttributeType: String {
         switch self {
@@ -226,11 +242,10 @@ struct FiltersView: View {
                                 ForEach($userFilter.inputs) { $input in
                                     GroupBox {
                                         let filter = filters[userFilter.name]!
-                                        if let matchingScalarInput = filter.scalarInputs.first(where: { $0.name == input.name }),
-                                           case let .scalar(scalarInput) = matchingScalarInput.inputType
-                                        {
-                                            let sliderMin = scalarInput.preferredSliderMinValue
-                                            let sliderMax = scalarInput.preferredSliderMaxValue
+                                        if let matchingInput = filter.inputs.first(where: { $0.name == input.name }) {
+                                            let values = matchingInput.values
+                                            let sliderMin = values.preferredSliderMinValue
+                                            let sliderMax = values.preferredSliderMaxValue
                                             HStack {
                                                 Slider(value: $input.value, in: sliderMin ... sliderMax) {
                                                     Text(input.name)
@@ -286,15 +301,14 @@ struct AddFilterView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(filter.name)
-                        Text(filter.scalarInputs.map(\.displayName).joined(separator: "・"))
+                        Text(filter.inputs.map(\.displayName).joined(separator: "・"))
                             .foregroundStyle(.secondary)
                             .font(.caption)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     Button("Add", systemImage: "plus") {
-                        let inputs: [UserFilterInput] = filter.scalarInputs.map { (input: FilterInput) in
-                            guard case let .scalar(scalarInput) = input.inputType else { fatalError("only scalar inputs supported") }
-                            return UserFilterInput(name: input.name, displayName: input.displayName, value: scalarInput.preferredDefaultValue)
+                        let inputs: [UserFilterInput] = filter.inputs.map { (input: FilterInput) in
+                            return UserFilterInput(name: input.name, displayName: input.displayName, value: input.values.preferredDefaultValue)
                         }
                         let userFilter = UserFilter(
                             name: filter.name,
