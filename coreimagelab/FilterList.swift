@@ -193,7 +193,7 @@ struct FiltersView: View {
                     }
                 }
                 .aspectRatio(useOriginalAspectRatio ? nil : 1.0, contentMode: .fit)
-                .containerRelativeFrame(.vertical) { size, axis in size * 0.4 }
+                .containerRelativeFrame(.vertical) { size, _ in size * 0.4 }
                 .clipped()
                 .contentShape(Rectangle())
                 .gesture(
