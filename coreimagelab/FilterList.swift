@@ -63,13 +63,13 @@ struct FilterInputScalar {
     let sliderMaxValue: Double?
 
     var preferredDefaultValue: Double {
-        defaultValue ??
-            identityValue ??
-            minValue ??
-            maxValue ??
-            sliderMinValue ??
-            sliderMaxValue ??
-            0
+        var result = defaultValue
+        result = result ?? identityValue
+        result = result ?? minValue
+        result = result ?? maxValue
+        result = result ?? sliderMinValue
+        result = result ?? sliderMaxValue
+        return result ?? 0
     }
 }
 
