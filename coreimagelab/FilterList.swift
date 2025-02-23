@@ -27,7 +27,7 @@ struct Filter: Identifiable {
                 defaultValue: inputAttributes[kCIAttributeDefault] as? Double,
                 identityValue: inputAttributes[kCIAttributeIdentity] as? Double,
                 minValue: inputAttributes[kCIAttributeMin] as? Double,
-                maxValue: inputAttributes[kCIAttributeMin] as? Double,
+                maxValue: inputAttributes[kCIAttributeMax] as? Double,
                 sliderMinValue: inputAttributes[kCIAttributeSliderMin] as? Double,
                 sliderMaxValue: inputAttributes[kCIAttributeSliderMax] as? Double
             )
