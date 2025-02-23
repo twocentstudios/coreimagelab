@@ -338,18 +338,18 @@ actor ImageProcessor {
 
     func processImage(inputImage: UIImage, filters: [UserFilter], ciContext: CIContext) async -> UIImage {
         let ciImage = CIImage(cgImage: inputImage.cgImage!)
-        var inputImage: CIImage = ciImage
+        var resultImage: CIImage = ciImage
         for userFilter in filters {
             guard userFilter.isEnabled else { continue }
             let filter = filterCache[userFilter.id] ?? CIFilter(name: userFilter.name)!
             filterCache[userFilter.id] = filter
-            filter.setValue(inputImage, forKey: kCIInputImageKey)
+            filter.setValue(resultImage, forKey: kCIInputImageKey)
             for userFilterInput in userFilter.inputs {
                 filter.setValue(userFilterInput.value, forKey: userFilterInput.name)
             }
-            inputImage = filter.outputImage!
+            resultImage = filter.outputImage!
         }
-        let filteredImage = UIImage(cgImage: ciContext.createCGImage(inputImage, from: ciImage.extent)!)
+        let filteredImage = UIImage(cgImage: ciContext.createCGImage(resultImage, from: ciImage.extent)!, scale: inputImage.scale, orientation: inputImage.imageOrientation)
         return filteredImage
     }
 }
