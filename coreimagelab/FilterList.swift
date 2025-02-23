@@ -1,4 +1,5 @@
 import CoreImage
+import PhotosUI
 import SwiftUI
 
 struct Filter: Identifiable {
@@ -161,14 +162,18 @@ func allFilters() -> [Filter] {
 }
 
 struct FiltersView: View {
-    let initialImage: UIImage = .init(named: "sendai")!
+    @State var inputImage: UIImage? = nil
+    let testImage: UIImage = .init(named: "sendai")!
+    var unfilteredImage: UIImage { inputImage ?? testImage }
+    @State var inputLibraryItem: PhotosPickerItem? = nil
+
     let filters: [Filter.ID: Filter] = .init(uniqueKeysWithValues: allFilters().map { ($0.id, $0) })
     @State var isShowingAdd: Bool = false
     @State var userFilters: [UserFilter] = [.mock]
     @State var filteredImage: UIImage? = nil
     @State var isEditing: Bool = false
     @State var isTouchingImage: Bool = false
-    @State var aspectRatio: CGFloat? = nil
+    @State var useOriginalAspectRatio: Bool = false
     let imageProcessor = ImageProcessor()
 
     let ciContext = CIContext(options: [.useSoftwareRenderer: false])
@@ -177,15 +182,15 @@ struct FiltersView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 ZStack {
-                    Image(uiImage: initialImage)
+                    Image(uiImage: unfilteredImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                    Image(uiImage: filteredImage ?? initialImage)
+                    Image(uiImage: filteredImage ?? unfilteredImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .opacity(isTouchingImage ? 0.0 : 1.0)
                 }
-                .aspectRatio(aspectRatio, contentMode: .fill)
+                .aspectRatio(useOriginalAspectRatio ? nil : 1.0, contentMode: .fit)
                 .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 0)
@@ -193,100 +198,141 @@ struct FiltersView: View {
                             isTouchingImage = true
                         }
                         .onEnded { value in
-                            if abs(value.velocity.height) > 300 {
-                                if aspectRatio == nil {
-                                    aspectRatio = 1.0
-                                } else {
-                                    aspectRatio = nil
-                                }
-                            }
                             isTouchingImage = false
                         }
                 )
 
-                HStack {
-                    Text("Active Filters")
-                    Spacer()
-                    Toggle("Edit", isOn: $isEditing)
-                        .toggleStyle(.button)
-                    Button("Add", systemImage: "plus") {
-                        isShowingAdd = true
-                    }
-                    .labelStyle(.iconOnly)
-                    .disabled(isEditing)
-                }
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal)
-                .padding(.vertical, 6)
-                .background(Material.bar)
-
                 List {
-                    ForEach($userFilters) { $userFilter in
-                        VStack(spacing: 10) {
-                            HStack {
-                                Toggle(userFilter.name, isOn: $userFilter.isEnabled)
-                                    .toggleStyle(.button)
-                                Spacer()
-                                if !isEditing {
-                                    Button {
-                                        userFilter.isExpanded.toggle()
-                                    } label: {
-                                        Image(systemName: userFilter.isExpanded ? "chevron.down" : "chevron.right")
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                            if userFilter.isExpanded, !isEditing {
-                                ForEach($userFilter.inputs) { $input in
-                                    GroupBox {
-                                        let filter = filters[userFilter.name]!
-                                        if let matchingInput = filter.inputs.first(where: { $0.name == input.name }) {
-                                            let values = matchingInput.values
-                                            let sliderMin = values.preferredSliderMinValue
-                                            let sliderMax = values.preferredSliderMaxValue
-                                            HStack {
-                                                Slider(value: $input.value, in: sliderMin ... sliderMax) {
-                                                    Text(input.name)
-                                                } minimumValueLabel: {
-                                                    Text(sliderMin, format: .number.precision(.significantDigits(2)))
-                                                } maximumValueLabel: {
-                                                    Text(sliderMax, format: .number.precision(.significantDigits(2)))
-                                                }
+                    Section {
+                        GroupBox("Input Image") {
+                            VStack(spacing: 16) {
+                                HStack {
+                                    Group {
+                                        if inputLibraryItem == nil || (inputLibraryItem != nil && inputImage == nil) {
+                                            PhotosPicker(selection: $inputLibraryItem, matching: .images, preferredItemEncoding: .current) {
+                                                Text(inputLibraryItem == nil ? "Select Image From Library" : "Loading Image...")
                                             }
-                                        }
-                                    } label: {
-                                        HStack {
-                                            Text(input.name)
-                                            Spacer()
-                                            Text(input.value, format: .number.precision(.significantDigits(4)))
+                                        } else {
+                                            Button("Remove Image") { inputLibraryItem = nil }
                                         }
                                     }
+                                    .buttonStyle(.bordered)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                }
+                                .task(id: inputLibraryItem) {
+                                    if let item = inputLibraryItem,
+                                       let data = try? await item.loadTransferable(type: Data.self)
+                                    {
+                                        inputImage = UIImage(data: data)
+                                    } else {
+                                        filteredImage = nil
+                                        inputImage = nil
+                                    }
+                                }
+
+                                HStack {
+                                    Text("Viewer Aspect Ratio")
+                                        .font(.subheadline)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    Picker("Viewer Aspect Ratio", selection: $useOriginalAspectRatio) {
+                                        Text("Original").tag(true)
+                                        Text("Square").tag(false)
+                                    }
+                                    .pickerStyle(.segmented)
                                 }
                             }
                         }
-                        .moveDisabled(!isEditing)
-                        .deleteDisabled(!isEditing)
+                    } header: {
+                        Text("Inputs")
+                            .font(.headline)
                     }
-                    .onMove { from, to in userFilters.move(fromOffsets: from, toOffset: to) }
-                    .onDelete { indexSet in userFilters.remove(atOffsets: indexSet) }
+                    filtersSection
                 }
                 .listStyle(.plain)
             }
             .environment(\.editMode, isEditing ? .constant(.active) : .constant(.inactive))
-            .task(id: userFilters) {
-                guard !userFilters.isEmpty else { return }
-                do {
-                    try await Task.sleep(for: .milliseconds(100))
-                    filteredImage = await imageProcessor.processImage(inputImage: initialImage, filters: userFilters, ciContext: ciContext)
-                } catch {}
-            }
+            .task(id: userFilters) { await processImage() }
+            .task(id: unfilteredImage) { await processImage() }
             .sheet(isPresented: $isShowingAdd) {
                 AddFilterView { filter in
                     userFilters.append(filter)
                 }
             }
+        }
+    }
+    
+    private func processImage() async {
+        guard !userFilters.isEmpty else { return }
+        do {
+            try await Task.sleep(for: .milliseconds(100))
+            filteredImage = await imageProcessor.processImage(inputImage: unfilteredImage, filters: userFilters, ciContext: ciContext)
+        } catch {}
+    }
+
+    @ViewBuilder var filtersSection: some View {
+        Section {
+            ForEach($userFilters) { $userFilter in
+                VStack(spacing: 10) {
+                    HStack {
+                        Toggle(userFilter.name, isOn: $userFilter.isEnabled)
+                            .toggleStyle(.button)
+                        Spacer()
+                        if !isEditing {
+                            Button {
+                                userFilter.isExpanded.toggle()
+                            } label: {
+                                Image(systemName: userFilter.isExpanded ? "chevron.down" : "chevron.right")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    if userFilter.isExpanded, !isEditing {
+                        ForEach($userFilter.inputs) { $input in
+                            GroupBox {
+                                let filter = filters[userFilter.name]!
+                                if let matchingInput = filter.inputs.first(where: { $0.name == input.name }) {
+                                    let values = matchingInput.values
+                                    let sliderMin = values.preferredSliderMinValue
+                                    let sliderMax = values.preferredSliderMaxValue
+                                    HStack {
+                                        Slider(value: $input.value, in: sliderMin ... sliderMax) {
+                                            Text(input.name)
+                                        } minimumValueLabel: {
+                                            Text(sliderMin, format: .number.precision(.significantDigits(2)))
+                                        } maximumValueLabel: {
+                                            Text(sliderMax, format: .number.precision(.significantDigits(2)))
+                                        }
+                                    }
+                                }
+                            } label: {
+                                HStack {
+                                    Text(input.name)
+                                    Spacer()
+                                    Text(input.value, format: .number.precision(.significantDigits(4)))
+                                }
+                            }
+                        }
+                    }
+                }
+                .moveDisabled(!isEditing)
+                .deleteDisabled(!isEditing)
+            }
+            .onMove { from, to in userFilters.move(fromOffsets: from, toOffset: to) }
+            .onDelete { indexSet in userFilters.remove(atOffsets: indexSet) }
+        } header: {
+            HStack {
+                Text("Filters")
+                Spacer()
+                Toggle("Edit", isOn: $isEditing)
+                    .toggleStyle(.button)
+                Button("Add", systemImage: "plus") {
+                    isShowingAdd = true
+                }
+                .labelStyle(.iconOnly)
+                .disabled(isEditing)
+            }
+            .font(.headline)
         }
     }
 }
