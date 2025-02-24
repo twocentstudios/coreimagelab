@@ -28,9 +28,6 @@ struct Filter: Identifiable {
 //                print(inputAttributes)
 //            }
 
-            // temporarily limit types
-            guard attributeType == .scalar || attributeType == .distance else { continue }
-
             let values = FilterValues(
                 defaultValue: inputAttributes[kCIAttributeDefault] as? Double,
                 identityValue: inputAttributes[kCIAttributeIdentity] as? Double,
@@ -45,9 +42,10 @@ struct Filter: Identifiable {
         return results
     }
 
-    var isValid: Bool {
+    var isSupported: Bool {
         guard inputKeys.contains(kCIInputImageKey) else { return false }
         guard outputKeys.contains(kCIOutputImageKey) else { return false }
+        guard inputs.map(\.isSupported).allSatisfy(\.self) else { return false }
         return true
     }
 }
@@ -64,6 +62,18 @@ struct FilterInput: Identifiable {
     let description: String?
     let inputType: FilterInputType
     let values: FilterValues
+
+    var isGlobalInput: Bool {
+        name == kCIInputImageKey || name == kCIInputBackgroundImageKey || name == kCIInputTargetImageKey
+    }
+
+    var isSupported: Bool {
+        FilterInputType.supported.contains(inputType) || isGlobalInput
+    }
+}
+
+extension FilterInputType {
+    static let supported: Set<FilterInputType> = [.scalar, .distance, .time]
 }
 
 struct FilterValues {
@@ -105,6 +115,15 @@ enum FilterInputType {
     case boolean
     case integer
     case count
+    case position
+    case offset
+    case position3
+    case rectangle
+    case opaqueColor
+    case color
+    case gradient
+    case image
+    case transform
 
     init?(_ attributeType: String?) {
         switch attributeType {
@@ -115,6 +134,15 @@ enum FilterInputType {
         case kCIAttributeTypeBoolean: self = .boolean
         case kCIAttributeTypeInteger: self = .integer
         case kCIAttributeTypeCount: self = .count
+        case kCIAttributeTypePosition: self = .position
+        case kCIAttributeTypeOffset: self = .offset
+        case kCIAttributeTypePosition3: self = .position3
+        case kCIAttributeTypeRectangle: self = .rectangle
+        case kCIAttributeTypeOpaqueColor: self = .opaqueColor
+        case kCIAttributeTypeColor: self = .color
+        case kCIAttributeTypeGradient: self = .gradient
+        case kCIAttributeTypeImage: self = .image
+        case kCIAttributeTypeTransform: self = .transform
         default: return nil
         }
     }
@@ -128,6 +156,15 @@ enum FilterInputType {
         case .boolean: kCIAttributeTypeBoolean
         case .integer: kCIAttributeTypeInteger
         case .count: kCIAttributeTypeCount
+        case .position: kCIAttributeTypePosition
+        case .offset: kCIAttributeTypeOffset
+        case .position3: kCIAttributeTypePosition3
+        case .rectangle: kCIAttributeTypeRectangle
+        case .opaqueColor: kCIAttributeTypeOpaqueColor
+        case .color: kCIAttributeTypeColor
+        case .gradient: kCIAttributeTypeGradient
+        case .image: kCIAttributeTypeImage
+        case .transform: kCIAttributeTypeTransform
         }
     }
 }
@@ -162,8 +199,9 @@ func allFilters() -> [Filter] {
     for filterName in filterNames {
         let ciFilter = CIFilter(name: filterName)!
         let filter = Filter(name: filterName, inputKeys: ciFilter.inputKeys, outputKeys: ciFilter.outputKeys, attributes: ciFilter.attributes)
-        if filter.isValid {
-            filters.append(filter)
+        filters.append(filter)
+        if filter.categories?.contains(kCICategoryTransition) == true {
+            print(filter.attributes)
         }
     }
     return filters
@@ -342,7 +380,7 @@ struct FiltersView: View {
     }
 
     @ViewBuilder var inputBackgroundImageSection: some View {
-        GroupBox("Background Image") {
+        GroupBox("Background/Target Image") {
             VStack(spacing: 16) {
                 HStack {
                     Group {
@@ -458,21 +496,33 @@ struct AddFilterView: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(sortedFilters, id: \.0) { category, filters in
+                ForEach(sortedFilters, id: \.0) {
+                    category,
+                        filters in
                     Section(category) {
                         ForEach(filters) { filter in
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(filter.name)
-                                    Text(filter.inputs.map(\.displayName).joined(separator: "・"))
-                                        .foregroundStyle(.secondary)
-                                        .font(.caption)
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 4) {
+                                            ForEach(filter.inputs) { input in
+                                                let isSupported = input.isSupported
+                                                Text(input.displayName)
+                                                    .foregroundStyle(isSupported ? Color.secondary : Color.red)
+                                                    .font(.caption)
+                                                Divider().containerRelativeFrame(.vertical) { size, _ in size * 0.6 }
+                                            }
+                                        }
+                                    }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 Button("Add", systemImage: "plus") {
-                                    let inputs: [UserFilterInput] = filter.inputs.map { (input: FilterInput) in
-                                        UserFilterInput(name: input.name, displayName: input.displayName, value: input.values.preferredDefaultValue)
-                                    }
+                                    let inputs: [UserFilterInput] = filter.inputs
+                                        .filter { !$0.isGlobalInput }
+                                        .map { (input: FilterInput) in
+                                            UserFilterInput(name: input.name, displayName: input.displayName, value: input.values.preferredDefaultValue)
+                                        }
                                     let userFilter = UserFilter(
                                         name: filter.name,
                                         inputs: inputs
@@ -480,8 +530,11 @@ struct AddFilterView: View {
                                     action?(userFilter)
                                     dismiss()
                                 }
+                                .foregroundStyle(.secondary)
                                 .labelStyle(.iconOnly)
+                                .opacity(filter.isSupported ? 1.0 : 0)
                             }
+                            .disabled(!filter.isSupported)
                         }
                     }
                 }
@@ -530,6 +583,12 @@ actor ImageProcessor {
                     filter.setValue(ciBackgroundImage, forKey: kCIInputBackgroundImageKey)
                 } else {
                     filter.setValue(nil, forKey: kCIInputBackgroundImageKey)
+                }
+            } else if filter.inputKeys.contains(kCIInputTargetImageKey) {
+                if let ciBackgroundImage {
+                    filter.setValue(ciBackgroundImage, forKey: kCIInputTargetImageKey)
+                } else {
+                    filter.setValue(nil, forKey: kCIInputTargetImageKey)
                 }
             }
             for userFilterInput in userFilter.inputs {
