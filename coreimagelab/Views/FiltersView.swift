@@ -352,6 +352,7 @@ struct FiltersView: View {
                 Spacer()
                 Toggle("Edit", isOn: $isEditing)
                     .toggleStyle(.button)
+                    .disabled(userFilters.isEmpty)
                 Button("Add", systemImage: "plus") {
                     isShowingAddScreen = true
                 }
