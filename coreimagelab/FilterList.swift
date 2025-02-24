@@ -185,7 +185,7 @@ struct FiltersView: View {
     @State var useOriginalAspectRatio: Bool = false
     @State var isScalingBackgroundImage: Bool = false
     @State var isProcessing: Bool = false
-    
+
     @State var expandedFilters: [UserFilter.ID: Bool] = [:]
 
     @AppStorage("isInputsExpanded") var isInputsExpanded: Bool = true
@@ -249,6 +249,7 @@ struct FiltersView: View {
                 }
                 .listStyle(.plain)
             }
+            .animation(.default, value: isEditing)
             .animation(.bouncy, value: isInputsExpanded)
             .environment(\.editMode, isEditing ? .constant(.active) : .constant(.inactive))
             .task(id: userFilters) { await processImage() }
@@ -369,7 +370,7 @@ struct FiltersView: View {
                                 expandedFilters[userFilter.id] = !isExpanded
                             } label: {
                                 Image(systemName: "chevron.down")
-                                    .rotationEffect(isExpanded  ? .zero : .degrees(-90))
+                                    .rotationEffect(isExpanded ? .zero : .degrees(-90))
                                     .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
