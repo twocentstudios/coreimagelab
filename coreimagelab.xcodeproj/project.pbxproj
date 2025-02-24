@@ -10,9 +10,22 @@
 		34D137772D6B42B000F06A02 /* coreimagelab.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = coreimagelab.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3470221D2D6CAF83004BED38 /* Exceptions for "coreimagelab" folder in "coreimagelab" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 34D137762D6B42B000F06A02 /* coreimagelab */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		34D137792D6B42B000F06A02 /* coreimagelab */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3470221D2D6CAF83004BED38 /* Exceptions for "coreimagelab" folder in "coreimagelab" target */,
+			);
 			path = coreimagelab;
 			sourceTree = "<group>";
 		};
@@ -255,6 +268,7 @@
 				DEVELOPMENT_TEAM = YK25EF78NT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = coreimagelab/Info.plist;
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Add filtered images to your Photo Library";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -287,6 +301,7 @@
 				DEVELOPMENT_TEAM = YK25EF78NT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = coreimagelab/Info.plist;
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Add filtered images to your Photo Library";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
