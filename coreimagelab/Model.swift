@@ -164,15 +164,15 @@ enum FilterInputType {
     }
 }
 
-struct UserFilter: Identifiable, Equatable {
-    let id: UUID = .init()
+struct UserFilter: Identifiable, Equatable, Codable {
+    var id: UUID = .init()
     let name: String
     var inputs: [UserFilterInput] = []
     var isEnabled: Bool = true
     var canExpand: Bool { !inputs.isEmpty }
 }
 
-struct UserFilterInput: Identifiable, Equatable {
+struct UserFilterInput: Identifiable, Equatable, Codable {
     var id: String { displayName }
     let name: String
     let displayName: String
