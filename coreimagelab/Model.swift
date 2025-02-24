@@ -195,9 +195,9 @@ func allFilters() -> [Filter] {
         let ciFilter = CIFilter(name: filterName)!
         let filter = Filter(name: filterName, inputKeys: ciFilter.inputKeys, outputKeys: ciFilter.outputKeys, attributes: ciFilter.attributes)
         filters.append(filter)
-        if filter.categories?.contains(kCICategoryTransition) == true {
-            print(filter.attributes)
-        }
+//        if filter.categories?.contains(kCICategoryTransition) == true {
+//            print(filter.attributes)
+//        }
     }
     return filters
 }
