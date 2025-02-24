@@ -24,6 +24,10 @@ struct Filter: Identifiable {
             let description = inputAttributes[kCIAttributeDescription] as? String
             guard let attributeType = FilterInputType(inputAttributes[kCIAttributeType] as? String) else { continue }
 
+//            if inputAttributes[kCIAttributeType] as? String == kCIAttributeTypeDistance {
+//                print(inputAttributes)
+//            }
+
             // temporarily limit types
             guard attributeType == .scalar || attributeType == .distance else { continue }
 
@@ -264,15 +268,19 @@ struct FiltersView: View {
         guard !userFilters.isEmpty else { return }
         isProcessing = true
         do {
-            try await Task.sleep(for: .milliseconds(100))
-            filteredImage = await imageProcessor.processImage(
+            try await Task.sleep(for: .milliseconds(20))
+            filteredImage = try await imageProcessor.processImage(
                 inputImage: unfilteredImage,
                 inputBackgroundImage: inputBackgroundImage,
                 filters: userFilters,
                 isScalingBackgroundImage: isScalingBackgroundImage,
                 ciContext: ciContext
             )
-        } catch {}
+        } catch {
+            if !(error is CancellationError) {
+                print(error)
+            }
+        }
         isProcessing = false
     }
 
@@ -448,7 +456,7 @@ actor ImageProcessor {
         filters: [UserFilter],
         isScalingBackgroundImage: Bool,
         ciContext: CIContext
-    ) async -> UIImage {
+    ) async throws -> UIImage {
         let ciImage = CIImage(image: inputImage, options: [.applyOrientationProperty: true])!
             .oriented(forExifOrientation: inputImage.imageOrientation.exifOrientation)
         let ciBackgroundImage = inputBackgroundImage.flatMap {
@@ -477,7 +485,9 @@ actor ImageProcessor {
             }
             resultImage = filter.outputImage!
         }
+        try Task.checkCancellation()
         let filteredImage = UIImage(cgImage: ciContext.createCGImage(resultImage, from: ciImage.extent, format: ciContext.workingFormat, colorSpace: inputImage.cgImage?.colorSpace, deferred: false)!, scale: inputImage.scale, orientation: inputImage.imageOrientation)
+        try Task.checkCancellation()
         return filteredImage
     }
 }
