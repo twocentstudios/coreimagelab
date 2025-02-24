@@ -232,6 +232,26 @@ struct FiltersView: View {
             .task(id: unfilteredImage) { await processImage() }
             .task(id: inputBackgroundImage) { await processImage() }
             .task(id: isScalingBackgroundImage) { await processImage() }
+            .task(id: inputLibraryItem) {
+                if let item = inputLibraryItem,
+                   let data = try? await item.loadTransferable(type: Data.self)
+                {
+                    inputImage = UIImage(data: data)
+                } else {
+                    filteredImage = nil
+                    inputImage = nil
+                }
+            }
+            .task(id: inputBackgroundLibraryItem) {
+                if let item = inputBackgroundLibraryItem,
+                   let data = try? await item.loadTransferable(type: Data.self)
+                {
+                    inputBackgroundImage = UIImage(data: data)
+                } else {
+                    filteredImage = nil
+                    inputBackgroundImage = nil
+                }
+            }
             .sheet(isPresented: $isShowingAdd) {
                 AddFilterView { filter in
                     userFilters.append(filter)
@@ -272,17 +292,6 @@ struct FiltersView: View {
                     .buttonStyle(.bordered)
                     .frame(maxWidth: .infinity, alignment: .center)
                 }
-                .task(id: inputLibraryItem) {
-                    if let item = inputLibraryItem,
-                       let data = try? await item.loadTransferable(type: Data.self)
-                    {
-                        inputImage = UIImage(data: data)
-                    } else {
-                        filteredImage = nil
-                        inputImage = nil
-                    }
-                }
-
                 HStack {
                     Text("Viewer Aspect Ratio")
                         .font(.subheadline)
@@ -312,16 +321,6 @@ struct FiltersView: View {
                     }
                     .buttonStyle(.bordered)
                     .frame(maxWidth: .infinity, alignment: .center)
-                }
-                .task(id: inputBackgroundLibraryItem) {
-                    if let item = inputBackgroundLibraryItem,
-                       let data = try? await item.loadTransferable(type: Data.self)
-                    {
-                        inputBackgroundImage = UIImage(data: data)
-                    } else {
-                        filteredImage = nil
-                        inputBackgroundImage = nil
-                    }
                 }
                 Toggle("Scale to Fill Input Image", isOn: $isScalingBackgroundImage)
                     .font(.subheadline)
