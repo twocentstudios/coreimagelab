@@ -180,6 +180,7 @@ struct FiltersView: View {
     @State var isTouchingImage: Bool = false
     @State var useOriginalAspectRatio: Bool = false
     @State var isScalingBackgroundImage: Bool = false
+    @State var isProcessing: Bool = false
 
     let imageProcessor = ImageProcessor()
     let ciContext = CIContext(options: [.useSoftwareRenderer: false])
@@ -241,6 +242,7 @@ struct FiltersView: View {
 
     private func processImage() async {
         guard !userFilters.isEmpty else { return }
+        isProcessing = true
         do {
             try await Task.sleep(for: .milliseconds(100))
             filteredImage = await imageProcessor.processImage(
@@ -251,6 +253,7 @@ struct FiltersView: View {
                 ciContext: ciContext
             )
         } catch {}
+        isProcessing = false
     }
 
     @ViewBuilder var inputImageSection: some View {
@@ -380,6 +383,7 @@ struct FiltersView: View {
         } header: {
             HStack {
                 Text("Filters")
+                ProgressView().opacity(isProcessing ? 1 : 0)
                 Spacer()
                 Toggle("Edit", isOn: $isEditing)
                     .toggleStyle(.button)
