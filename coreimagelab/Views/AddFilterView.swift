@@ -16,7 +16,10 @@ struct AddFilterView: View {
                 print("Category not found", filter.name)
                 continue
             }
-            result[representativeCategory] = (result[representativeCategory] ?? []) + [filter]
+            result[representativeCategory, default: []].append(filter)
+        }
+        for (key, _) in result {
+            result[key]?.sort(by: { $0.name < $1.name })
         }
         return result.sorted { $0.key < $1.key }
     }
