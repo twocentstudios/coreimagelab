@@ -477,7 +477,7 @@ actor ImageProcessor {
             }
             resultImage = filter.outputImage!
         }
-        let filteredImage = UIImage(cgImage: ciContext.createCGImage(resultImage, from: ciImage.extent, format: ciContext.workingFormat, colorSpace: inputImage.cgImage?.colorSpace)!, scale: inputImage.scale, orientation: inputImage.imageOrientation)
+        let filteredImage = UIImage(cgImage: ciContext.createCGImage(resultImage, from: ciImage.extent, format: ciContext.workingFormat, colorSpace: inputImage.cgImage?.colorSpace, deferred: false)!, scale: inputImage.scale, orientation: inputImage.imageOrientation)
         return filteredImage
     }
 }
