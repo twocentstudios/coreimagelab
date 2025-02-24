@@ -227,6 +227,7 @@ struct FiltersView: View {
     @State var useOriginalAspectRatio: Bool = false
     @State var isScalingBackgroundImage: Bool = false
     @State var isProcessing: Bool = false
+    @State var processingErrorMessage: String?
 
     @State var expandedFilters: [UserFilter.ID: Bool] = [:]
 
@@ -253,6 +254,19 @@ struct FiltersView: View {
                 .aspectRatio(useOriginalAspectRatio ? nil : 1.0, contentMode: .fit)
                 .containerRelativeFrame(.vertical) { size, _ in size * 0.4 }
                 .clipped()
+                .overlay {
+                    if let processingErrorMessage {
+                        VStack(spacing: 10) {
+                            Image(systemName: "exclamationmark.octagon")
+                                .font(.largeTitle)
+                            Text(processingErrorMessage)
+                        }
+                        .padding()
+                        .foregroundColor(.red)
+                        .background(Material.regular, in: RoundedRectangle(cornerRadius: 10))
+                        .padding()
+                    }
+                }
                 .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 0)
@@ -332,6 +346,7 @@ struct FiltersView: View {
     private func processImage() async {
         guard !userFilters.isEmpty else { return }
         isProcessing = true
+        processingErrorMessage = nil
         do {
             try await Task.sleep(for: .milliseconds(20))
             filteredImage = try await imageProcessor.processImage(
@@ -341,11 +356,10 @@ struct FiltersView: View {
                 isScalingBackgroundImage: isScalingBackgroundImage,
                 ciContext: ciContext
             )
-        } catch {
-            if !(error is CancellationError) {
-                print(error)
-            }
-        }
+        } catch let ImageProcessor.ProcessingError.missingOutputImage(filterName) {
+            processingErrorMessage = "Processing failed at filter \"\(filterName)\"."
+            filteredImage = nil
+        } catch {}
         isProcessing = false
     }
 
@@ -477,7 +491,7 @@ struct FiltersView: View {
 
 struct AddFilterView: View {
     let filters: [Filter.ID: Filter]
-    
+
     @State var isShowingUnsupportedFilters: Bool = false
 
     @Environment(\.dismiss) private var dismiss
@@ -486,7 +500,7 @@ struct AddFilterView: View {
     var sortedFilters: [(String, [Filter])] {
         var result: [String: [Filter]] = [:]
         for filter in filters.values {
-            if !isShowingUnsupportedFilters && !filter.isSupported { continue }
+            if !isShowingUnsupportedFilters, !filter.isSupported { continue }
             guard let representativeCategory = filter.categories?.first(where: { Filter.supportedCategories.contains($0) }) else {
                 print("Category not found", filter.name)
                 continue
@@ -561,6 +575,9 @@ struct AddFilterView: View {
 }
 
 actor ImageProcessor {
+    enum ProcessingError: Error {
+        case missingOutputImage(String) // filter name
+    }
     private var filterCache: [UserFilter.ID: CIFilter] = [:]
 
     func processImage(
@@ -602,7 +619,8 @@ actor ImageProcessor {
             for userFilterInput in userFilter.inputs {
                 filter.setValue(userFilterInput.value, forKey: userFilterInput.name)
             }
-            resultImage = filter.outputImage!
+            guard let outputImage = filter.outputImage else { throw ProcessingError.missingOutputImage(filter.name) }
+            resultImage = outputImage
         }
         try Task.checkCancellation()
         let filteredImage = UIImage(cgImage: ciContext.createCGImage(resultImage, from: ciImage.extent, format: ciContext.workingFormat, colorSpace: inputImage.cgImage?.colorSpace, deferred: false)!, scale: inputImage.scale, orientation: inputImage.imageOrientation)
