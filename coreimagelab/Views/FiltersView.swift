@@ -142,7 +142,7 @@ struct FiltersView: View {
                 )
             }
             .sheet(isPresented: $isShowingHelpScreen) {
-                Text("Help")
+                HelpView()
             }
             .sheet(isPresented: $isShowingAboutScreen) {
                 Text("About")
