@@ -162,6 +162,8 @@ func allFilters() -> [Filter] {
 }
 
 struct FiltersView: View {
+    let filters: [Filter.ID: Filter] = .init(uniqueKeysWithValues: allFilters().map { ($0.id, $0) })
+
     @State var inputImage: UIImage? = nil
     let testImage: UIImage = .init(named: "sendai")!
     var unfilteredImage: UIImage { inputImage ?? testImage }
@@ -170,16 +172,16 @@ struct FiltersView: View {
     @State var inputBackgroundImage: UIImage? = nil
     @State var inputBackgroundLibraryItem: PhotosPickerItem? = nil
 
-    let filters: [Filter.ID: Filter] = .init(uniqueKeysWithValues: allFilters().map { ($0.id, $0) })
     @State var isShowingAdd: Bool = false
+
     @State var userFilters: [UserFilter] = []
     @State var filteredImage: UIImage? = nil
     @State var isEditing: Bool = false
     @State var isTouchingImage: Bool = false
     @State var useOriginalAspectRatio: Bool = false
     @State var isScalingBackgroundImage: Bool = false
-    let imageProcessor = ImageProcessor()
 
+    let imageProcessor = ImageProcessor()
     let ciContext = CIContext(options: [.useSoftwareRenderer: false])
 
     var body: some View {
@@ -213,78 +215,13 @@ struct FiltersView: View {
 
                 List {
                     Section {
-                        GroupBox("Input Image") {
-                            VStack(spacing: 16) {
-                                HStack {
-                                    Group {
-                                        if inputLibraryItem == nil || (inputLibraryItem != nil && inputImage == nil) {
-                                            PhotosPicker(selection: $inputLibraryItem, matching: .images, preferredItemEncoding: .current) {
-                                                Text(inputLibraryItem == nil ? "Select Image From Library" : "Loading Image...")
-                                            }
-                                        } else {
-                                            Button("Remove Image") { inputLibraryItem = nil }
-                                        }
-                                    }
-                                    .buttonStyle(.bordered)
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                }
-                                .task(id: inputLibraryItem) {
-                                    if let item = inputLibraryItem,
-                                       let data = try? await item.loadTransferable(type: Data.self)
-                                    {
-                                        inputImage = UIImage(data: data)
-                                    } else {
-                                        filteredImage = nil
-                                        inputImage = nil
-                                    }
-                                }
-
-                                HStack {
-                                    Text("Viewer Aspect Ratio")
-                                        .font(.subheadline)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                    Picker("Viewer Aspect Ratio", selection: $useOriginalAspectRatio) {
-                                        Text("Original").tag(true)
-                                        Text("Square").tag(false)
-                                    }
-                                    .pickerStyle(.segmented)
-                                }
-                            }
-                        }
-
-                        GroupBox("Background Image") {
-                            VStack(spacing: 16) {
-                                HStack {
-                                    Group {
-                                        if inputBackgroundLibraryItem == nil || (inputBackgroundLibraryItem != nil && inputBackgroundImage == nil) {
-                                            PhotosPicker(selection: $inputBackgroundLibraryItem, matching: .images, preferredItemEncoding: .current) {
-                                                Text(inputBackgroundLibraryItem == nil ? "Select Image From Library" : "Loading Image...")
-                                            }
-                                        } else {
-                                            Button("Remove Image") { inputBackgroundLibraryItem = nil }
-                                        }
-                                    }
-                                    .buttonStyle(.bordered)
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                }
-                                .task(id: inputBackgroundLibraryItem) {
-                                    if let item = inputBackgroundLibraryItem,
-                                       let data = try? await item.loadTransferable(type: Data.self)
-                                    {
-                                        inputBackgroundImage = UIImage(data: data)
-                                    } else {
-                                        filteredImage = nil
-                                        inputBackgroundImage = nil
-                                    }
-                                }
-                                Toggle("Scale to Fill Input Image", isOn: $isScalingBackgroundImage)
-                                    .font(.subheadline)
-                            }
-                        }
+                        inputImageSection
+                        inputBackgroundImageSection
                     } header: {
                         Text("Inputs")
                             .font(.headline)
                     }
+
                     filtersSection
                 }
                 .listStyle(.plain)
@@ -314,6 +251,79 @@ struct FiltersView: View {
                 ciContext: ciContext
             )
         } catch {}
+    }
+
+    @ViewBuilder var inputImageSection: some View {
+        GroupBox("Input Image") {
+            VStack(spacing: 16) {
+                HStack {
+                    Group {
+                        if inputLibraryItem == nil || (inputLibraryItem != nil && inputImage == nil) {
+                            PhotosPicker(selection: $inputLibraryItem, matching: .images, preferredItemEncoding: .current) {
+                                Text(inputLibraryItem == nil ? "Select Image From Library" : "Loading Image...")
+                            }
+                        } else {
+                            Button("Remove Image") { inputLibraryItem = nil }
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
+                .task(id: inputLibraryItem) {
+                    if let item = inputLibraryItem,
+                       let data = try? await item.loadTransferable(type: Data.self)
+                    {
+                        inputImage = UIImage(data: data)
+                    } else {
+                        filteredImage = nil
+                        inputImage = nil
+                    }
+                }
+
+                HStack {
+                    Text("Viewer Aspect Ratio")
+                        .font(.subheadline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Picker("Viewer Aspect Ratio", selection: $useOriginalAspectRatio) {
+                        Text("Original").tag(true)
+                        Text("Square").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder var inputBackgroundImageSection: some View {
+        GroupBox("Background Image") {
+            VStack(spacing: 16) {
+                HStack {
+                    Group {
+                        if inputBackgroundLibraryItem == nil || (inputBackgroundLibraryItem != nil && inputBackgroundImage == nil) {
+                            PhotosPicker(selection: $inputBackgroundLibraryItem, matching: .images, preferredItemEncoding: .current) {
+                                Text(inputBackgroundLibraryItem == nil ? "Select Image From Library" : "Loading Image...")
+                            }
+                        } else {
+                            Button("Remove Image") { inputBackgroundLibraryItem = nil }
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
+                .task(id: inputBackgroundLibraryItem) {
+                    if let item = inputBackgroundLibraryItem,
+                       let data = try? await item.loadTransferable(type: Data.self)
+                    {
+                        inputBackgroundImage = UIImage(data: data)
+                    } else {
+                        filteredImage = nil
+                        inputBackgroundImage = nil
+                    }
+                }
+                Toggle("Scale to Fill Input Image", isOn: $isScalingBackgroundImage)
+                    .font(.subheadline)
+            }
+        }
     }
 
     @ViewBuilder var filtersSection: some View {
