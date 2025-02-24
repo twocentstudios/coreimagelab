@@ -334,9 +334,6 @@ struct FiltersView: View {
             .onMove { from, to in userFilters.move(fromOffsets: from, toOffset: to) }
             if userFilters.isEmpty {
                 VStack(spacing: 0) {
-                    Text("No Filters")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
                     Button("Add Filter", systemImage: "plus.circle") {
                         isShowingAddScreen = true
                     }
