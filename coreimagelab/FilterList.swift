@@ -231,6 +231,7 @@ struct FiltersView: View {
 
     @State var expandedFilters: [UserFilter.ID: Bool] = [:]
 
+    @AppStorage("isAboutExpanded") var isAboutExpanded: Bool = true
     @AppStorage("isInputsExpanded") var isInputsExpanded: Bool = true
 
     let imageProcessor = ImageProcessor()
@@ -279,6 +280,7 @@ struct FiltersView: View {
                 )
 
                 List {
+                    aboutSection
                     Section {
                         if isInputsExpanded {
                             inputImageSection
@@ -306,8 +308,9 @@ struct FiltersView: View {
                 .listStyle(.plain)
             }
             .animation(.default, value: isEditing)
-            .animation(.bouncy, value: isInputsExpanded)
-            .animation(.bouncy, value: userFilters.map(\.id))
+            .animation(.default, value: isInputsExpanded)
+            .animation(.default, value: isAboutExpanded)
+            .animation(.default, value: userFilters.map(\.id))
             .environment(\.editMode, isEditing ? .constant(.active) : .constant(.inactive))
             .task(id: userFilters) { await processImage() }
             .task(id: unfilteredImage) { await processImage() }
@@ -365,6 +368,51 @@ struct FiltersView: View {
             filteredImage = nil
         } catch {}
         isProcessing = false
+    }
+
+    @ViewBuilder var aboutSection: some View {
+        Section {
+            if isAboutExpanded {
+                HStack {
+                    Button {
+                        
+                    } label: {
+                        Label("Help", systemImage: "questionmark.circle")
+                    }
+                    .buttonStyle(.bordered)
+                    Spacer()
+                    Button {
+                        
+                    } label: {
+                        Label("About", systemImage: "info.circle")
+                    }
+                    .buttonStyle(.bordered)
+                    Spacer()
+                    Button {
+                        
+                    } label: {
+                        Label("Tip $5", systemImage: "dollarsign.circle")
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .listRowSeparator(.hidden)
+            }
+        } header: {
+            Button {
+                isAboutExpanded.toggle()
+            } label: {
+                HStack {
+                    Text("Core Image Labo")
+                        .font(.headline)
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .rotationEffect(isAboutExpanded ? .zero : .degrees(-90))
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     @ViewBuilder var inputImageSection: some View {
