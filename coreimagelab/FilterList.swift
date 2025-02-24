@@ -219,6 +219,9 @@ struct FiltersView: View {
     @State var inputBackgroundLibraryItem: PhotosPickerItem? = nil
 
     @State var isShowingAddScreen: Bool = false
+    @State var isShowingHelpScreen: Bool = false
+    @State var isShowingAboutScreen: Bool = false
+    @State var isShowingTipScreen: Bool = false
 
     @State var userFilters: [UserFilter] = []
     @State var filteredImage: UIImage? = nil
@@ -344,6 +347,15 @@ struct FiltersView: View {
                     }
                 )
             }
+            .sheet(isPresented: $isShowingHelpScreen) {
+                Text("Help")
+            }
+            .sheet(isPresented: $isShowingAboutScreen) {
+                Text("About")
+            }
+            .sheet(isPresented: $isShowingTipScreen) {
+                Text("Tip")
+            }
         }
     }
 
@@ -375,26 +387,25 @@ struct FiltersView: View {
             if isAboutExpanded {
                 HStack {
                     Button {
-                        
+                        isShowingHelpScreen = true
                     } label: {
                         Label("Help", systemImage: "questionmark.circle")
                     }
                     .buttonStyle(.bordered)
-                    Spacer()
                     Button {
-                        
+                        isShowingAboutScreen = true
                     } label: {
                         Label("About", systemImage: "info.circle")
                     }
                     .buttonStyle(.bordered)
-                    Spacer()
                     Button {
-                        
+                        isShowingTipScreen = true
                     } label: {
                         Label("Tip $5", systemImage: "dollarsign.circle")
                     }
                     .buttonStyle(.bordered)
                 }
+                .frame(maxWidth: .infinity)
                 .listRowSeparator(.hidden)
             }
         } header: {
