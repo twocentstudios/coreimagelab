@@ -187,6 +187,8 @@ struct FiltersView: View {
     @State var isScalingBackgroundImage: Bool = false
     @State var isProcessing: Bool = false
 
+    @AppStorage("isInputsExpanded") var isInputsExpanded: Bool = true
+
     let imageProcessor = ImageProcessor()
     let ciContext = CIContext(options: [.useSoftwareRenderer: false])
 
@@ -221,17 +223,32 @@ struct FiltersView: View {
 
                 List {
                     Section {
-                        inputImageSection
-                        inputBackgroundImageSection
+                        if isInputsExpanded {
+                            inputImageSection
+                            inputBackgroundImageSection
+                        }
                     } header: {
-                        Text("Inputs")
-                            .font(.headline)
+                        Button {
+                            isInputsExpanded.toggle()
+                        } label: {
+                            HStack {
+                                Text("Inputs")
+                                    .font(.headline)
+                                Spacer()
+                                Image(systemName: "chevron.down")
+                                    .rotationEffect(isInputsExpanded ? .zero : .degrees(-90))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
 
                     filtersSection
                 }
                 .listStyle(.plain)
             }
+            .animation(.bouncy, value: isInputsExpanded)
             .environment(\.editMode, isEditing ? .constant(.active) : .constant(.inactive))
             .task(id: userFilters) { await processImage() }
             .task(id: unfilteredImage) { await processImage() }
