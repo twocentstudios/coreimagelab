@@ -52,6 +52,10 @@ struct Filter: Identifiable {
     }
 }
 
+extension Filter {
+    static let supportedCategories: Set<String> = [kCICategoryDistortionEffect, kCICategoryGeometryAdjustment, kCICategoryCompositeOperation, kCICategoryHalftoneEffect, kCICategoryColorAdjustment, kCICategoryColorEffect, kCICategoryTransition, kCICategoryTileEffect, kCICategoryGenerator, kCICategoryReduction, kCICategoryGradient, kCICategoryStylize, kCICategorySharpen, kCICategoryBlur, kCICategoryFilterGenerator]
+}
+
 struct FilterInput: Identifiable {
     var id: String { displayName }
     let name: String
@@ -277,9 +281,12 @@ struct FiltersView: View {
                 }
             }
             .sheet(isPresented: $isShowingAdd) {
-                AddFilterView { filter in
-                    userFilters.append(filter)
-                }
+                AddFilterView(
+                    filters: filters,
+                    action: { filter in
+                        userFilters.append(filter)
+                    }
+                )
             }
         }
     }
@@ -430,32 +437,52 @@ struct FiltersView: View {
 }
 
 struct AddFilterView: View {
+    let filters: [Filter.ID: Filter]
+
     @Environment(\.dismiss) private var dismiss
     var action: ((UserFilter) -> Void)?
 
+    var sortedFilters: [(String, [Filter])] {
+        var result: [String: [Filter]] = [:]
+        for filter in filters.values {
+            guard let representativeCategory = filter.categories?.first(where: { Filter.supportedCategories.contains($0) }) else {
+                print("Category not found", filter.name)
+                continue
+            }
+            result[representativeCategory] = (result[representativeCategory] ?? []) + [filter]
+        }
+        return result.sorted { $0.key < $1.key }
+    }
+
     var body: some View {
         NavigationStack {
-            List(allFilters()) { filter in
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(filter.name)
-                        Text(filter.inputs.map(\.displayName).joined(separator: "・"))
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    Button("Add", systemImage: "plus") {
-                        let inputs: [UserFilterInput] = filter.inputs.map { (input: FilterInput) in
-                            UserFilterInput(name: input.name, displayName: input.displayName, value: input.values.preferredDefaultValue)
+            List {
+                ForEach(sortedFilters, id: \.0) { category, filters in
+                    Section(category) {
+                        ForEach(filters) { filter in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(filter.name)
+                                    Text(filter.inputs.map(\.displayName).joined(separator: "・"))
+                                        .foregroundStyle(.secondary)
+                                        .font(.caption)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                Button("Add", systemImage: "plus") {
+                                    let inputs: [UserFilterInput] = filter.inputs.map { (input: FilterInput) in
+                                        UserFilterInput(name: input.name, displayName: input.displayName, value: input.values.preferredDefaultValue)
+                                    }
+                                    let userFilter = UserFilter(
+                                        name: filter.name,
+                                        inputs: inputs
+                                    )
+                                    action?(userFilter)
+                                    dismiss()
+                                }
+                                .labelStyle(.iconOnly)
+                            }
                         }
-                        let userFilter = UserFilter(
-                            name: filter.name,
-                            inputs: inputs
-                        )
-                        action?(userFilter)
-                        dismiss()
                     }
-                    .labelStyle(.iconOnly)
                 }
             }
             .listStyle(.plain)
