@@ -218,7 +218,7 @@ struct FiltersView: View {
     @State var inputBackgroundImage: UIImage? = nil
     @State var inputBackgroundLibraryItem: PhotosPickerItem? = nil
 
-    @State var isShowingAdd: Bool = false
+    @State var isShowingAddScreen: Bool = false
 
     @State var userFilters: [UserFilter] = []
     @State var filteredImage: UIImage? = nil
@@ -336,7 +336,7 @@ struct FiltersView: View {
                     inputBackgroundImage = nil
                 }
             }
-            .sheet(isPresented: $isShowingAdd) {
+            .sheet(isPresented: $isShowingAddScreen) {
                 AddFilterView(
                     filters: filters,
                     action: { filter in
@@ -533,7 +533,7 @@ struct FiltersView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Button("Add Filter", systemImage: "plus.circle") {
-                        isShowingAdd = true
+                        isShowingAddScreen = true
                     }
                     .buttonStyle(.bordered)
                     .padding()
@@ -549,7 +549,7 @@ struct FiltersView: View {
                 Toggle("Edit", isOn: $isEditing)
                     .toggleStyle(.button)
                 Button("Add", systemImage: "plus") {
-                    isShowingAdd = true
+                    isShowingAddScreen = true
                 }
                 .labelStyle(.iconOnly)
                 .disabled(isEditing)
