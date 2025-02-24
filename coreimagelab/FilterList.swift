@@ -518,6 +518,7 @@ struct AddFilterView: View {
                                             }
                                         }
                                     }
+                                    .scrollClipDisabled(true)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 Button("Add", systemImage: "plus") {
