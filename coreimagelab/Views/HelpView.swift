@@ -22,6 +22,9 @@ struct HelpView: View {
                 Section("Filter Setup Errors") {
                     Text("Some filter setups will not be executable by Core Image. An error message that indicates the filter where the error occurred will be shown over the image. In some cases, ensure you've set a background image.")
                 }
+                Section("Exporting") {
+                    Text("You can export the final filtered image. You can also export the filter settings in JSON format.")
+                }
             }
             .listStyle(.plain)
             .navigationTitle("Help")
