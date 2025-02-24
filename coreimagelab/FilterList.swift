@@ -479,6 +479,20 @@ struct FiltersView: View {
                 .moveDisabled(!isEditing)
             }
             .onMove { from, to in userFilters.move(fromOffsets: from, toOffset: to) }
+            if userFilters.isEmpty {
+                VStack(spacing: 0) {
+                    Text("No Filters")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Button("Add Filter", systemImage: "plus.circle") {
+                        isShowingAdd = true
+                    }
+                    .buttonStyle(.bordered)
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
+                .listRowSeparator(.hidden)
+            }
         } header: {
             HStack {
                 Text("Filters")
