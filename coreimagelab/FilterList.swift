@@ -132,7 +132,6 @@ struct UserFilter: Identifiable, Equatable {
     let id: UUID = .init()
     let name: String
     var inputs: [UserFilterInput] = []
-    var isExpanded: Bool = true
     var isEnabled: Bool = true
     var canExpand: Bool { !inputs.isEmpty }
 }
@@ -186,6 +185,8 @@ struct FiltersView: View {
     @State var useOriginalAspectRatio: Bool = false
     @State var isScalingBackgroundImage: Bool = false
     @State var isProcessing: Bool = false
+    
+    @State var expandedFilters: [UserFilter.ID: Bool] = [:]
 
     @AppStorage("isInputsExpanded") var isInputsExpanded: Bool = true
 
@@ -357,6 +358,7 @@ struct FiltersView: View {
     @ViewBuilder var filtersSection: some View {
         Section {
             ForEach($userFilters) { $userFilter in
+                let isExpanded: Bool = expandedFilters[userFilter.id, default: true]
                 VStack(spacing: 10) {
                     HStack {
                         Toggle(userFilter.name, isOn: $userFilter.isEnabled)
@@ -364,16 +366,16 @@ struct FiltersView: View {
                         Spacer()
                         if userFilter.canExpand, !isEditing {
                             Button {
-                                userFilter.isExpanded.toggle()
+                                expandedFilters[userFilter.id] = !isExpanded
                             } label: {
                                 Image(systemName: "chevron.down")
-                                    .rotationEffect(userFilter.isExpanded  ? .zero : .degrees(-90))
+                                    .rotationEffect(isExpanded  ? .zero : .degrees(-90))
                                     .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
                         }
                     }
-                    if userFilter.isExpanded, userFilter.canExpand, !isEditing {
+                    if isExpanded, userFilter.canExpand, !isEditing {
                         ForEach($userFilter.inputs) { $input in
                             GroupBox {
                                 let filter = filters[userFilter.name]!
@@ -401,7 +403,7 @@ struct FiltersView: View {
                         }
                     }
                 }
-                .animation(.default, value: userFilter.isExpanded)
+                .animation(.default, value: isExpanded)
                 .moveDisabled(!isEditing)
                 .deleteDisabled(!isEditing)
             }
