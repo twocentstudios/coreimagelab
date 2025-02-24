@@ -307,6 +307,7 @@ struct FiltersView: View {
             }
             .animation(.default, value: isEditing)
             .animation(.bouncy, value: isInputsExpanded)
+            .animation(.bouncy, value: userFilters.map(\.id))
             .environment(\.editMode, isEditing ? .constant(.active) : .constant(.inactive))
             .task(id: userFilters) { await processImage() }
             .task(id: unfilteredImage) { await processImage() }
