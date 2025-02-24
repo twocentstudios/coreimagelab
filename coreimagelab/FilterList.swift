@@ -233,7 +233,7 @@ struct FiltersView: View {
                             isInputsExpanded.toggle()
                         } label: {
                             HStack {
-                                Text("Inputs")
+                                Text("Image Inputs")
                                     .font(.headline)
                                 Spacer()
                                 Image(systemName: "chevron.down")
