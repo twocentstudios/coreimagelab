@@ -231,7 +231,9 @@ actor ImageProcessor {
             guard userFilter.isEnabled else { continue }
             let filter = filterCache[userFilter.id] ?? CIFilter(name: userFilter.name)!
             filterCache[userFilter.id] = filter
-            filter.setValue(resultImage, forKey: kCIInputImageKey)
+            if filter.inputKeys.contains(kCIInputImageKey) {
+                filter.setValue(resultImage, forKey: kCIInputImageKey)
+            }
             if filter.inputKeys.contains(kCIInputBackgroundImageKey) {
                 if let ciBackgroundImage {
                     filter.setValue(ciBackgroundImage, forKey: kCIInputBackgroundImageKey)
