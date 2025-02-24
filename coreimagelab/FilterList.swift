@@ -24,10 +24,6 @@ struct Filter: Identifiable {
             let description = inputAttributes[kCIAttributeDescription] as? String
             guard let attributeType = FilterInputType(inputAttributes[kCIAttributeType] as? String) else { continue }
 
-//            if inputAttributes[kCIAttributeType] as? String == kCIAttributeTypeDistance {
-//                print(inputAttributes)
-//            }
-
             let values = FilterValues(
                 defaultValue: inputAttributes[kCIAttributeDefault] as? Double,
                 identityValue: inputAttributes[kCIAttributeIdentity] as? Double,
