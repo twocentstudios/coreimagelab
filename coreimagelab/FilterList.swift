@@ -371,6 +371,7 @@ struct FiltersView: View {
                     HStack {
                         Toggle(userFilter.name, isOn: $userFilter.isEnabled)
                             .toggleStyle(.button)
+                            .layoutPriority(1)
                         if userFilter.canExpand, !isEditing {
                             Button {
                                 expandedFilters[userFilter.id] = !isExpanded
