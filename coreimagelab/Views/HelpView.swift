@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct HelpView: View {
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         NavigationStack {
             List {
@@ -28,6 +30,16 @@ struct HelpView: View {
             }
             .listStyle(.plain)
             .navigationTitle("Help")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Label("Done", systemImage: "xmark")
+                            .labelStyle(.iconOnly)
+                    }
+                }
+            }
         }
     }
 }
