@@ -366,7 +366,8 @@ struct FiltersView: View {
                             Button {
                                 userFilter.isExpanded.toggle()
                             } label: {
-                                Image(systemName: userFilter.isExpanded ? "chevron.down" : "chevron.right")
+                                Image(systemName: "chevron.down")
+                                    .rotationEffect(userFilter.isExpanded  ? .zero : .degrees(-90))
                                     .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
@@ -400,6 +401,7 @@ struct FiltersView: View {
                         }
                     }
                 }
+                .animation(.default, value: userFilter.isExpanded)
                 .moveDisabled(!isEditing)
                 .deleteDisabled(!isEditing)
             }
