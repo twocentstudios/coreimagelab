@@ -184,6 +184,7 @@ extension UserFilter {
         name: "CIBloom",
         inputs: [
             .init(name: "inputIntensity", displayName: "Intensity", value: 0.5),
+            .init(name: "inputRadius", displayName: "Radius", value: 10.0),
         ]
     )
 }
