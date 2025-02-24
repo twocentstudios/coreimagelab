@@ -73,7 +73,7 @@ struct FilterInput: Identifiable {
 }
 
 extension FilterInputType {
-    static let supported: Set<FilterInputType> = [.scalar, .distance, .time]
+    static let supported: Set<FilterInputType> = [.scalar, .distance, .time, .integer]
 }
 
 struct FilterValues {
