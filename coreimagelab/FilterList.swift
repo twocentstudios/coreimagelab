@@ -364,7 +364,6 @@ struct FiltersView: View {
                     HStack {
                         Toggle(userFilter.name, isOn: $userFilter.isEnabled)
                             .toggleStyle(.button)
-                        Spacer()
                         if userFilter.canExpand, !isEditing {
                             Button {
                                 expandedFilters[userFilter.id] = !isExpanded
@@ -372,6 +371,8 @@ struct FiltersView: View {
                                 Image(systemName: "chevron.down")
                                     .rotationEffect(isExpanded ? .zero : .degrees(-90))
                                     .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                    .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                         }
