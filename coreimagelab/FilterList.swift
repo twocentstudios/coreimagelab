@@ -344,7 +344,10 @@ struct FiltersView: View {
     }
 
     private func processImage() async {
-        guard !userFilters.isEmpty else { return }
+        guard !userFilters.isEmpty else {
+            filteredImage = nil
+            return
+        }
         isProcessing = true
         processingErrorMessage = nil
         do {
@@ -424,6 +427,12 @@ struct FiltersView: View {
                         Toggle(userFilter.name, isOn: $userFilter.isEnabled)
                             .toggleStyle(.button)
                             .layoutPriority(1)
+                        Button("Delete", systemImage: "trash", role: .destructive) {
+                            userFilters.removeAll(where: { $0.id == userFilter.id })
+                        }
+                        .foregroundStyle(.red)
+                        .labelStyle(.iconOnly)
+                        .buttonStyle(.plain)
                         if userFilter.canExpand, !isEditing {
                             Button {
                                 expandedFilters[userFilter.id] = !isExpanded
@@ -467,10 +476,8 @@ struct FiltersView: View {
                 }
                 .animation(.default, value: isExpanded)
                 .moveDisabled(!isEditing)
-                .deleteDisabled(!isEditing)
             }
             .onMove { from, to in userFilters.move(fromOffsets: from, toOffset: to) }
-            .onDelete { indexSet in userFilters.remove(atOffsets: indexSet) }
         } header: {
             HStack {
                 Text("Filters")
