@@ -29,7 +29,8 @@ struct FiltersView: View {
     @State var expandedFilters: [UserFilter.ID: Bool] = [:]
 
     @AppStorage("isAboutExpanded") var isAboutExpanded: Bool = true
-    @AppStorage("isInputsExpanded") var isInputsExpanded: Bool = true
+    @AppStorage("isInputsExpanded") var isInputsExpanded: Bool = false
+    @AppStorage("isExportsExpanded") var isExportsExpanded: Bool = false
 
     let imageProcessor = ImageProcessor()
     let ciContext = CIContext(options: [.useSoftwareRenderer: false])
@@ -99,14 +100,15 @@ struct FiltersView: View {
                         }
                         .buttonStyle(.plain)
                     }
-
                     filtersSection
+                    exportsSection
                 }
                 .listStyle(.plain)
             }
             .animation(.default, value: isEditing)
             .animation(.default, value: isInputsExpanded)
             .animation(.default, value: isAboutExpanded)
+            .animation(.default, value: isExportsExpanded)
             .animation(.default, value: userFilters.map(\.id))
             .environment(\.editMode, isEditing ? .constant(.active) : .constant(.inactive))
             .task(id: userFilters) { await processImage() }
@@ -357,6 +359,44 @@ struct FiltersView: View {
                 .disabled(isEditing)
             }
             .font(.headline)
+        }
+    }
+
+    @ViewBuilder var exportsSection: some View {
+        Section {
+            if isExportsExpanded {
+                VStack {
+                    ShareLink(item: ImageExport(image: filteredImage ?? unfilteredImage), subject: nil, message: nil, preview: .init("Export Image")) {
+                        Label("Share Image", systemImage: "square.and.arrow.up")
+                            .padding(.vertical, 6)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    ShareLink(item: FilterExport(userFilters: userFilters), subject: nil, message: nil, preview: .init("Export Image")) {
+                        Label("Share Filter JSON", systemImage: "text.page")
+                            .padding(.vertical, 6)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .frame(maxWidth: .infinity)
+                .listRowSeparator(.hidden)
+            }
+        } header: {
+            Button {
+                isExportsExpanded.toggle()
+            } label: {
+                HStack {
+                    Text("Export")
+                        .font(.headline)
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .rotationEffect(isExportsExpanded ? .zero : .degrees(-90))
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
     }
 }

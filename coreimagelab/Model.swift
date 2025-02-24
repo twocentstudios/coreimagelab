@@ -1,5 +1,6 @@
 import CoreImage
 import UIKit.UIImage
+import CoreTransferable
 
 struct Filter: Identifiable {
     var id: String { name }
@@ -273,5 +274,42 @@ extension UIImage.Orientation {
         case .rightMirrored: return 7
         @unknown default: return 0
         }
+    }
+}
+
+struct ImageExport: Transferable {
+    let image: UIImage
+
+    public static var transferRepresentation: some TransferRepresentation {
+        DataRepresentation(exportedContentType: .png) { export in
+            if let pngData = export.image.pngData() {
+                return pngData
+            } else {
+                throw ConversionError.failedToConvertToPNG
+            }
+        }
+    }
+
+    enum ConversionError: Error {
+        case failedToConvertToPNG
+    }
+}
+
+struct FilterExport: Codable, Transferable {
+    let userFilters: [UserFilter]
+    
+    static let encoder: JSONEncoder = {
+        var encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted]
+        return encoder
+    }()
+
+    public static var transferRepresentation: some TransferRepresentation {
+        CodableRepresentation(for: FilterExport.self, contentType: .json, encoder: encoder, decoder: JSONDecoder())
+            .suggestedFileName("\(UUID().uuidString.prefix(4))")
+    }
+
+    enum ConversionError: Error {
+        case failedToConvertToPNG
     }
 }
