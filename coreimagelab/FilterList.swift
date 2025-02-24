@@ -477,6 +477,8 @@ struct FiltersView: View {
 
 struct AddFilterView: View {
     let filters: [Filter.ID: Filter]
+    
+    @State var isShowingUnsupportedFilters: Bool = false
 
     @Environment(\.dismiss) private var dismiss
     var action: ((UserFilter) -> Void)?
@@ -484,6 +486,7 @@ struct AddFilterView: View {
     var sortedFilters: [(String, [Filter])] {
         var result: [String: [Filter]] = [:]
         for filter in filters.values {
+            if !isShowingUnsupportedFilters && !filter.isSupported { continue }
             guard let representativeCategory = filter.categories?.first(where: { Filter.supportedCategories.contains($0) }) else {
                 print("Category not found", filter.name)
                 continue
@@ -533,19 +536,23 @@ struct AddFilterView: View {
                                 .foregroundStyle(.secondary)
                                 .labelStyle(.iconOnly)
                                 .opacity(filter.isSupported ? 1.0 : 0)
+                                .disabled(!filter.isSupported)
                             }
-                            .disabled(!filter.isSupported)
                         }
                     }
                 }
             }
             .listStyle(.plain)
-            .navigationTitle("All Filters")
+            .navigationTitle(isShowingUnsupportedFilters ? "All Filters" : "Supported Filters")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done", systemImage: "xmark") {
                         dismiss()
                     }
+                }
+                ToolbarItem(placement: .automatic) {
+                    Toggle("Show All", isOn: $isShowingUnsupportedFilters)
+                        .padding(.trailing)
                 }
             }
         }
