@@ -134,6 +134,7 @@ struct UserFilter: Identifiable, Equatable {
     var inputs: [UserFilterInput] = []
     var isExpanded: Bool = true
     var isEnabled: Bool = true
+    var canExpand: Bool { !inputs.isEmpty }
 }
 
 struct UserFilterInput: Identifiable, Equatable {
@@ -344,7 +345,7 @@ struct FiltersView: View {
                         Toggle(userFilter.name, isOn: $userFilter.isEnabled)
                             .toggleStyle(.button)
                         Spacer()
-                        if !isEditing {
+                        if userFilter.canExpand, !isEditing {
                             Button {
                                 userFilter.isExpanded.toggle()
                             } label: {
@@ -354,7 +355,7 @@ struct FiltersView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    if userFilter.isExpanded, !isEditing {
+                    if userFilter.isExpanded, userFilter.canExpand, !isEditing {
                         ForEach($userFilter.inputs) { $input in
                             GroupBox {
                                 let filter = filters[userFilter.name]!
