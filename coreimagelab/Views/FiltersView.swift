@@ -337,7 +337,7 @@ struct FiltersView: View {
             }
         } header: {
             HStack {
-                Text("Filters")
+                Text("Filter Chain")
                 ProgressView().opacity(isProcessing ? 1 : 0)
                 Spacer()
                 Toggle("Edit", isOn: $isEditing)
