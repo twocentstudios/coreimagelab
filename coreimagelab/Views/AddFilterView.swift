@@ -87,3 +87,8 @@ struct AddFilterView: View {
         }
     }
 }
+
+#Preview {
+    let filters: [Filter.ID: Filter] = .init(uniqueKeysWithValues: allFilters().map { ($0.id, $0) })
+    AddFilterView(filters: filters)
+}
