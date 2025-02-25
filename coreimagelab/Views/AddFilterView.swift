@@ -24,21 +24,13 @@ struct AddFilterView: View {
         return result.sorted { $0.key < $1.key }
     }
 
-    @State var isExpanded: [String: Bool] = [:]
-
-    func isExpandedBinding(_ key: String) -> Binding<Bool> {
-        .init {
-            isExpanded[key] ?? false
-        } set: { newValue in
-            isExpanded[key] = newValue
-        }
-    }
-
     var body: some View {
         NavigationStack {
             List {
-                ForEach(sortedFilters, id: \.0) { category, filters in
-                    Section(category, isExpanded: isExpandedBinding(category)) {
+                ForEach(sortedFilters, id: \.0) {
+                    category,
+                        filters in
+                    Section(category) {
                         ForEach(filters) { filter in
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -79,7 +71,7 @@ struct AddFilterView: View {
                     }
                 }
             }
-            .listStyle(.sidebar)
+            .listStyle(.plain)
             .navigationTitle(isShowingUnsupportedFilters ? "All Filters" : "Supported Filters")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
