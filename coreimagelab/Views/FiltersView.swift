@@ -14,8 +14,6 @@ struct FiltersView: View {
 
     @State var isShowingAddScreen: Bool = false
     @State var isShowingHelpScreen: Bool = false
-    @State var isShowingAboutScreen: Bool = false
-    @State var isShowingTipScreen: Bool = false
 
     @State var userFilters: [UserFilter] = []
     @State var filteredImage: UIImage? = nil
