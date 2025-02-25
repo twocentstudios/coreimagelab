@@ -1,6 +1,6 @@
 # Core Image Labo
 
-<img width="250" src="/count/Assets.xcassets/AppIcon.appiconset/any.png">
+<img width="250" src="/coreimagelab/Assets.xcassets/AppIcon.appiconset/any.png">
 
 Core Image Labo is a developer tool for testing a Core Image filter chain. It supports iOS 17.0+.
 
