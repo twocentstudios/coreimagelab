@@ -323,12 +323,15 @@ struct FiltersView: View {
             .onMove { from, to in userFilters.move(fromOffsets: from, toOffset: to) }
             if userFilters.isEmpty {
                 VStack(spacing: 0) {
-                    Button("Add Filter", systemImage: "plus.circle") {
+                    Button {
                         isShowingAddScreen = true
+                    } label: {
+                        Label("Add Filter", systemImage: "plus.circle")
+                            .padding(.vertical, 6)
+                            .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .center)
+                    .frame(maxWidth: .infinity)
                 }
                 .listRowSeparator(.hidden)
             }
