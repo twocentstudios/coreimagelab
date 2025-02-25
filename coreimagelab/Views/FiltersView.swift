@@ -181,27 +181,14 @@ struct FiltersView: View {
     @ViewBuilder var aboutSection: some View {
         Section {
             if isAboutExpanded {
-                HStack {
-                    Button {
-                        isShowingHelpScreen = true
-                    } label: {
-                        Label("Help", systemImage: "questionmark.circle")
-                    }
-                    .buttonStyle(.bordered)
-                    Button {
-                        isShowingAboutScreen = true
-                    } label: {
-                        Label("About", systemImage: "info.circle")
-                    }
-                    .buttonStyle(.bordered)
-                    Button {
-                        isShowingTipScreen = true
-                    } label: {
-                        Label("Tip $5", systemImage: "dollarsign.circle")
-                    }
-                    .buttonStyle(.bordered)
+                Button {
+                    isShowingHelpScreen = true
+                } label: {
+                    Label("Help", systemImage: "questionmark.circle")
+                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
+                .buttonStyle(.bordered)
                 .listRowSeparator(.hidden)
             }
         } header: {
