@@ -6,6 +6,10 @@ Core Image Labo is a developer tool for testing a Core Image filter chain. It su
 
 ### [Download from the App Store](https://apps.apple.com/us/app/core-image-labo/id6742433427)
 
+Main|Add Filter
+-|-
+![main](https://github.com/user-attachments/assets/9b1895ed-8b98-4d94-ae30-3b203a3a9139)|![add filter](https://github.com/user-attachments/assets/b3654e97-592a-4d06-b462-4f5090c83bb7)
+
 ## Features
 
 CIFilters with scalar input parameters are currently supported. All other CIFilters are optionally listed for reference.
